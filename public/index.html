@@ -46,12 +46,13 @@
     flex:1 1 300px; padding:12px 16px; font:inherit; color:var(--ink);
     background:var(--parch); border:var(--line); border-radius:16px; box-shadow:var(--pop);
   }
-  button {
+  button, a.btn {
     font:inherit; font-weight:700; color:var(--ink); cursor:pointer;
     padding:10px 20px; border:var(--line); border-radius:16px; background:var(--mint); box-shadow:var(--pop);
     transition:transform .08s, box-shadow .08s;
   }
-  button:active:not(:disabled) { transform:translate(4px,4px); box-shadow:1px 1px 0 var(--ink); }
+  a.btn { display:inline-block; box-sizing:border-box; text-align:center; text-decoration:none; background:var(--mint); }
+  button:active:not(:disabled), a.btn:active { transform:translate(4px,4px); box-shadow:1px 1px 0 var(--ink); }
   button:disabled { filter:grayscale(.7); opacity:.6; cursor:not-allowed; }
   .status { min-height:28px; margin:14px auto 6px; text-align:center; color:#fff; font-weight:600; }
   .status.error { color:var(--ink); background:var(--butter); border:var(--line); border-radius:12px; padding:4px 12px; width:fit-content; }
@@ -256,7 +257,7 @@
     .result h3 { font-size:28px; }
     .result p { margin-bottom:0; }
     .result .actions { position:relative; z-index:1; display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:22px; padding:0 10px; }
-    .result .actions button { width:100%; padding:13px 8px; font-size:19px; border-radius:999px; }
+    .result .actions button, .result .actions a.btn { width:100%; padding:13px 8px; font-size:19px; border-radius:999px; }
     .result .actions #close, .result #again[hidden] + #share { grid-column:1 / -1; }
     #close { order:-1; background:var(--butter); }
   }
@@ -350,7 +351,7 @@
     <div class="actions">
       <button class="again" id="again">Quay lại</button>
       <button class="share" id="share">📸 Chia sẻ</button>
-      <button id="close">Chốt món này!</button>
+      <a id="close" class="btn" role="button" href="#">Chốt món này!</a>
     </div>
   </div>
 </div>
@@ -813,18 +814,33 @@ function showResult(d, by = null) {
   $('rMeta').textContent = isShop
     ? [`cách ${d.priceText}`, d.rating ? `⭐ ${d.rating}` : '', d.category].filter(Boolean).join(', ')
     : `${d.priceText}, nhóm ${d.category}`;
+  const link = !by && !isShop ? shopeeUrl() : '';
+  const c = $('close');
+  if (link) { c.href = link; c.target = '_blank'; c.rel = 'noopener'; }
+  else { c.href = '#'; c.removeAttribute('target'); c.removeAttribute('rel'); }
   $('modal').classList.add('open');
-  $('close').focus();
+  c.focus();
   fireworks();
 }
+// ShopeeFood shop link for the current menu, or '' unless it is https on shopeefood.vn (or a subdomain)
+function shopeeUrl() {
+  try {
+    const u = new URL(menuUrl);
+    const ok = u.protocol === 'https:' && (u.hostname === 'shopeefood.vn' || u.hostname.endsWith('.shopeefood.vn'));
+    return ok ? u.href : '';
+  } catch { return ''; }
+}
 function closeModal() { $('modal').classList.remove('open'); $('spin').focus(); }
-$('close').addEventListener('click', () => {
+$('close').addEventListener('click', e => {
+  // dish mode with a valid ShopeeFood link: let the anchor navigate in this same tap (iOS universal link); no preventDefault
+  if (!(e.currentTarget.target === '_blank' && !sharedBy && mode !== 'shop')) e.preventDefault();
   if (sharedBy) { closeModal(); spin(); return; }
   if (mode === 'shop') { const d = lastWinner; closeModal(); openShop(d); return; }
   const list = loadHistory();
   if (lastEntry && list[0]?.at === lastEntry.at) { list[0].picked = true; saveHistory(list); postEvent('pick', lastEntry.name); }
   closeModal();
 });
+$('close').addEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } });
 $('x').addEventListener('click', closeModal);
 $('again').addEventListener('click', () => { closeModal(); spin(); });
 $('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
