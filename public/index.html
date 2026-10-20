@@ -1,0 +1,1141 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hôm nay ăn gì? — Vòng quay tiên tri</title>
+<!--og-->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🔮%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  :root {
+    --ink:#2a1b3d; --sky1:#5b3fa8; --sky2:#c7a8ff; --parch:#fff4d6;
+    --pink:#ff7eb6; --butter:#ffe36e; --mint:#7ef0c4; --gold:#ffc83d; --muted:#6d5a86;
+    --line: 3px solid var(--ink); --pop: 5px 5px 0 var(--ink);
+  }
+  * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  body {
+    margin:0; min-height:100vh; color:var(--ink);
+    font-family:"Baloo 2", "Comic Sans MS", system-ui, sans-serif; font-size:17px; line-height:1.35;
+    background:
+      radial-gradient(2px 2px at 12% 18%, #fff 50%, transparent 51%),
+      radial-gradient(2px 2px at 78% 9%, #fff 50%, transparent 51%),
+      radial-gradient(3px 3px at 55% 26%, #fff8 50%, transparent 51%),
+      radial-gradient(2px 2px at 32% 6%, #fff 50%, transparent 51%),
+      radial-gradient(3px 3px at 92% 30%, #fff9 50%, transparent 51%),
+      radial-gradient(2px 2px at 5% 40%, #fffa 50%, transparent 51%),
+      linear-gradient(180deg, var(--sky1) 0%, #8a63d2 38%, var(--sky2) 72%, #ffd6ec 100%) fixed;
+  }
+  main { max-width:1100px; margin:0 auto; padding:28px 18px 60px; }
+  :focus-visible { outline:3px dashed var(--butter); outline-offset:3px; }
+
+  header { text-align:center; margin-bottom:22px; }
+  h1 {
+    margin:0; font-size:clamp(40px, 7vw, 72px); line-height:1; font-weight:800; letter-spacing:-.5px;
+    color:var(--butter); -webkit-text-stroke:3px var(--ink); paint-order:stroke fill;
+    text-shadow:0 6px 0 var(--ink); transform:rotate(-2deg);
+  }
+  h1 .moon { display:inline-block; -webkit-text-stroke:0; text-shadow:none; }
+  .tagline { margin:14px 0 0; color:#fff; font-size:19px; font-weight:600; text-shadow:0 2px 0 #2a1b3d55; }
+
+  form { display:flex; gap:10px; flex-wrap:wrap; max-width:760px; margin:0 auto; }
+  input[type=url] {
+    flex:1 1 300px; padding:12px 16px; font:inherit; color:var(--ink);
+    background:var(--parch); border:var(--line); border-radius:16px; box-shadow:var(--pop);
+  }
+  button {
+    font:inherit; font-weight:700; color:var(--ink); cursor:pointer;
+    padding:10px 20px; border:var(--line); border-radius:16px; background:var(--mint); box-shadow:var(--pop);
+    transition:transform .08s, box-shadow .08s;
+  }
+  button:active:not(:disabled) { transform:translate(4px,4px); box-shadow:1px 1px 0 var(--ink); }
+  button:disabled { filter:grayscale(.7); opacity:.6; cursor:not-allowed; }
+  .status { min-height:28px; margin:14px auto 6px; text-align:center; color:#fff; font-weight:600; }
+  .status.error { color:var(--ink); background:var(--butter); border:var(--line); border-radius:12px; padding:4px 12px; width:fit-content; }
+
+  .layout { display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:28px; align-items:start; margin-top:10px; }
+  @media (max-width:860px) { .layout { grid-template-columns:1fr; } }
+
+  .stage { position:relative; }
+  .wheel-wrap { position:relative; width:100%; max-width:580px; margin:18px auto 0; aspect-ratio:1; }
+  canvas { width:100%; height:100%; display:block; filter:drop-shadow(0 10px 0 #2a1b3d66); }
+  .pointer { position:absolute; top:-22px; left:50%; width:58px; transform:translateX(-50%); z-index:2; filter:drop-shadow(0 4px 0 #2a1b3d88); }
+  .spinning .pointer { animation:tick .12s infinite alternate; }
+  @keyframes tick { to { transform:translateX(-50%) rotate(-12deg); } }
+  #spin {
+    display:block; margin:22px auto 0; padding:12px 54px; font-size:28px; border-radius:999px;
+    background:var(--pink); box-shadow:0 7px 0 var(--ink);
+  }
+  #spin:active:not(:disabled) { transform:translateY(6px); box-shadow:0 1px 0 var(--ink); }
+
+  .panel { background:var(--parch); border:var(--line); border-radius:22px; box-shadow:7px 7px 0 var(--ink); overflow:hidden; }
+  .tabs { display:flex; border-bottom:var(--line); }
+  .tabs button { flex:1; border:0; border-radius:0; box-shadow:none; background:#f3e3ff; padding:10px 8px; font-size:16px; }
+  .tabs button + button { border-left:var(--line); }
+  .tabs button[aria-selected=true] { background:var(--butter); }
+  .tabs button:active { transform:none; }
+  .tab-body { padding:14px 16px 16px; }
+  .panel h2 { margin:0; font-size:20px; line-height:1.2; }
+  .shop { color:var(--muted); font-size:14px; margin:2px 0 10px; }
+  .tools { display:flex; gap:8px; margin-bottom:8px; }
+  .tools button { padding:3px 12px; font-size:14px; border-width:2px; border-radius:10px; box-shadow:2px 2px 0 var(--ink); background:#fff; }
+  ul { list-style:none; margin:0; padding:0; max-height:470px; overflow:auto; }
+  li label { display:flex; gap:10px; align-items:center; padding:6px 4px; border-bottom:2px dashed #2a1b3d22; font-size:15px; cursor:pointer; }
+  li input { accent-color:var(--pink); width:18px; height:18px; flex:none; }
+  li .price { margin-left:auto; color:var(--muted); white-space:nowrap; font-weight:600; }
+  .empty { color:var(--muted); text-align:center; padding:30px 8px; }
+
+  /* nearby shops */
+  #near { background:var(--butter); }
+  .shops li { display:flex; align-items:center; gap:6px; border-bottom:2px dashed #2a1b3d22; }
+  .shops li label { flex:1; min-width:0; border:0; }
+  .shops .sn { min-width:0; display:flex; flex-direction:column; line-height:1.2; }
+  .shops .sm { font-size:13px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .shops .shut .sn > span:first-child { color:var(--muted); }
+  .shops .go { flex:none; padding:2px 10px; font-size:13px; border-width:2px; border-radius:10px; box-shadow:2px 2px 0 var(--ink); background:var(--butter); }
+  .area { display:grid; grid-template-columns:1fr 1fr auto; gap:8px; margin:0 0 12px; }
+  .area[hidden] { display:none; }
+  .area select { min-width:0; padding:6px 8px; font:inherit; font-size:16px; color:var(--ink); background:#fff; border:2px solid var(--ink); border-radius:10px; }
+  .area button { padding:4px 12px; font-size:15px; border-width:2px; border-radius:10px; box-shadow:2px 2px 0 var(--ink); }
+
+  .hist li { display:flex; gap:10px; align-items:center; padding:8px 2px; border-bottom:2px dashed #2a1b3d22; }
+  .hist img, .hist .noimg { width:46px; height:46px; flex:none; border:2px solid var(--ink); border-radius:12px; object-fit:cover; background:var(--mint); display:grid; place-items:center; }
+  .hist .info { min-width:0; flex:1; }
+  .hist .name { font-weight:700; line-height:1.15; }
+  .hist .meta { font-size:13px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .hist .badge { flex:none; font-size:12px; font-weight:700; padding:1px 8px; border:2px solid var(--ink); border-radius:999px; background:var(--mint); }
+  .hist-foot { display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:14px; color:var(--muted); }
+  .hist-foot button { padding:3px 12px; font-size:14px; border-width:2px; border-radius:10px; box-shadow:2px 2px 0 var(--ink); background:#fff; }
+
+  .modal { position:fixed; inset:0; background:#2a1b3dcc; display:none; align-items:center; justify-content:center; padding:16px; z-index:10; }
+  .modal.open { display:flex; }
+  .result {
+    position:relative; background:var(--parch); border:4px solid var(--ink); border-radius:26px; box-shadow:9px 9px 0 var(--ink);
+    padding:26px 24px 22px; text-align:center; max-width:370px; width:100%; animation:pop .45s cubic-bezier(.2,1.6,.4,1);
+  }
+  @keyframes pop { from { transform:scale(.4) rotate(-8deg); opacity:0; } }
+  .result .kicker { display:inline-block; margin:-46px 0 12px; padding:2px 16px; background:var(--pink); border:3px solid var(--ink); border-radius:999px; font-weight:800; transform:rotate(-3deg); }
+  .result img { width:190px; height:190px; object-fit:cover; border:3px solid var(--ink); border-radius:20px; background:var(--mint); transform:rotate(2deg); }
+  .result h3 { margin:14px 0 2px; font-size:26px; line-height:1.15; }
+  .result p { margin:0 0 18px; color:var(--muted); font-weight:600; }
+  .result .actions { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+  .result .again { background:#fff; }
+  .result .share { background:var(--sky2); }
+
+  /* share sheet: preview of the generated card + download / copy link (used when the native share sheet can't take files) */
+  .sheet { position:fixed; inset:0; z-index:13; display:flex; align-items:center; justify-content:center; padding:16px; background:#1f1330cc; }
+  .sheet[hidden] { display:none; }
+  .sheet-box { width:min(400px, 100%); max-height:100%; overflow:auto; background:var(--parch); border:4px solid var(--ink); border-radius:24px; box-shadow:8px 8px 0 var(--ink); padding:18px; text-align:center; }
+  .sheet-box h3 { margin:0 0 12px; font-size:22px; }
+  .sheet-box img { display:block; width:min(100%, 260px); margin:0 auto 14px; border:3px solid var(--ink); border-radius:14px; }
+  .sheet-link { display:flex; gap:8px; margin-bottom:12px; }
+  .sheet-link input { flex:1; min-width:0; padding:8px 10px; font:inherit; font-size:16px; color:var(--ink); background:#fff; border:2px solid var(--ink); border-radius:12px; }
+  .sheet-btns { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .sheet-btns a, .sheet-btns button { display:block; padding:10px; font-size:16px; text-align:center; text-decoration:none; color:var(--ink); }
+  .sheet-btns a { font-weight:700; background:var(--butter); border:var(--line); border-radius:16px; box-shadow:var(--pop); }
+  .sheet-btns .wide { grid-column:1 / -1; }
+  .sheet-close { background:#fff; }
+  .result .x { position:absolute; top:10px; right:12px; width:38px; height:38px; padding:0; border-radius:12px; font-size:18px; background:#fff; box-shadow:2px 2px 0 var(--ink); border-width:2px; }
+  .rays { display:none; }
+  .me { display:inline-block; margin-top:10px; padding:1px 14px; background:var(--parch); border:2px solid var(--ink); border-radius:999px; font-size:15px; font-weight:600; box-shadow:2px 2px 0 var(--ink); }
+  .me b { color:var(--sky1); }
+  .toasts { position:fixed; top:12px; left:50%; transform:translateX(-50%); width:min(440px, calc(100% - 24px)); display:flex; flex-direction:column; gap:8px; z-index:12; pointer-events:none; }
+  .toast {
+    display:flex; gap:10px; align-items:center; padding:8px 14px 8px 8px; background:var(--parch);
+    border:3px solid var(--ink); border-radius:18px; box-shadow:4px 4px 0 var(--ink); font-size:15px; line-height:1.25;
+    animation:drop .35s cubic-bezier(.2,1.5,.4,1); transition:opacity .3s, transform .3s;
+  }
+  .toast.mine { background:var(--butter); }
+  .toast.out { opacity:0; transform:translateY(-12px); }
+  @keyframes drop { from { transform:translateY(-30px); opacity:0; } }
+  .ava { width:34px; height:34px; flex:none; display:grid; place-items:center; border:2px solid var(--ink); border-radius:50%; font-size:12px; font-weight:800; }
+  .feed li { display:flex; gap:10px; align-items:center; padding:8px 2px; border-bottom:2px dashed #2a1b3d22; font-size:15px; line-height:1.25; }
+  .feed .meta { font-size:13px; color:var(--muted); }
+  #fx { position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:11; }
+
+  /* ---- mobile: card deck instead of the wheel ---- */
+  .deck { display:none; }
+  /* Desktop: logo and link form share one compact row, the wheel shrinks to fit the screen height so Quay stays visible */
+  @media (min-width:861px) {
+    main { display:grid; grid-template-columns:auto minmax(0,1fr); column-gap:28px; align-items:center; padding-top:16px; padding-bottom:24px; }
+    header { text-align:left; margin:0; }
+    h1 { font-size:40px; -webkit-text-stroke-width:2.5px; text-shadow:0 4px 0 var(--ink); }
+    .tagline { margin:6px 0 0; font-size:15px; }
+    .me { margin-top:6px; font-size:14px; }
+    form { max-width:none; margin:0; }
+    .status { grid-column:1 / -1; margin:10px auto 0; }
+    .layout { grid-column:1 / -1; margin-top:0; }
+    .wheel-wrap { width:min(100%, 560px, max(300px, calc(100svh - 290px))); margin-top:30px; }
+    #spin { margin-top:18px; }
+    .panel { position:sticky; top:12px; display:flex; flex-direction:column; max-height:max(420px, calc(100svh - 150px)); }
+    .panel .tab-body:not([hidden]) { display:flex; flex-direction:column; min-height:0; flex:1; }
+    .panel ul { max-height:none; flex:1; min-height:0; }
+  }
+  @media (max-width:700px) {
+    /* compact header so the deck and Quay fit on one screen */
+    main { padding:12px 14px calc(110px + env(safe-area-inset-bottom)); }
+    header { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; text-align:left; }
+    h1 { font-size:clamp(24px, 7.6vw, 30px); white-space:nowrap; -webkit-text-stroke-width:2px; text-shadow:0 3px 0 var(--ink); }
+    .tagline { display:none; }
+    .me { margin:0; font-size:13px; padding:1px 10px; white-space:nowrap; }
+    form { flex-wrap:nowrap; gap:8px; }
+    /* 16px minimum: iOS Safari zooms the page when focusing a field with smaller text */
+    input[type=url] { flex:1 1 auto; min-width:0; padding:8px 12px; font-size:16px; border-radius:14px; box-shadow:3px 3px 0 var(--ink); }
+    #load, #near { flex:none; padding:8px 14px; font-size:15px; box-shadow:3px 3px 0 var(--ink); }
+    #near { padding:8px 10px; }
+    #near .lbl { display:none; }
+    .status { min-height:0; margin:8px auto 0; font-size:14px; line-height:1.3; }
+    .layout { margin-top:0; gap:18px; }
+    .wheel-wrap { display:none; }
+    .deck {
+      --cw:clamp(140px, min(54vw, calc((100svh - 330px) / 1.3)), 230px);
+      display:block; position:relative; overflow:hidden; touch-action:pan-y; user-select:none; -webkit-user-select:none;
+      height:calc(var(--cw) * 1.3 + 86px); margin:14px 0 0;
+      border:var(--line); border-radius:26px; box-shadow:var(--pop);
+      background:
+        radial-gradient(ellipse 46% 16% at 50% 86%, #ffc83daa, transparent 70%),
+        radial-gradient(1.5px 1.5px at 14% 20%, #fff 50%, transparent 51%),
+        radial-gradient(1.5px 1.5px at 84% 14%, #fff 50%, transparent 51%),
+        radial-gradient(2px 2px at 70% 70%, #fff8 50%, transparent 51%),
+        linear-gradient(180deg, #3b2563, #1f1330);
+    }
+    .pedestal {
+      position:absolute; left:50%; bottom:22px; width:calc(var(--cw) * .9); height:22px; transform:translateX(-50%);
+      background:var(--gold); border:3px solid var(--ink); border-radius:50%; box-shadow:0 0 28px #ffc83d;
+    }
+    .dcard {
+      position:absolute; left:50%; top:calc(50% - 16px); width:var(--cw); height:calc(var(--cw) * 1.3);
+      margin:calc(var(--cw) * -.65) 0 0 calc(var(--cw) / -2);
+      display:flex; flex-direction:column; overflow:hidden; will-change:transform;
+      background:var(--parch); border:3px solid var(--ink); border-radius:20px; box-shadow:4px 5px 0 var(--ink);
+    }
+    .dcard .ph { flex:1; min-height:0; display:grid; place-items:center; font-size:56px; border-bottom:3px solid var(--ink); }
+    .dcard img { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; -webkit-user-drag:none; }
+    .dcard[hidden], .dcard img[hidden] { display:none; }
+    .dcard .ph:has(> img[hidden])::after { content:"🍽️"; }
+    .dcard .dn { padding:6px 10px 0; font-weight:800; font-size:16px; line-height:1.15; min-height:calc(2.3em + 6px);
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .dcard .dp { padding:0 10px 8px; color:var(--muted); font-weight:700; font-size:14px; }
+    .dcard.won { animation:won .6s cubic-bezier(.2,1.8,.4,1); box-shadow:0 0 0 4px var(--butter), 0 0 34px 8px #ffc83d; }
+    @keyframes won { 40% { scale:1.12; } }
+    .deck-empty { position:absolute; inset:0 24px 50px; display:grid; place-items:center; text-align:center; color:#fff; font-size:20px; font-weight:700; }
+    .deck-hint { position:absolute; left:0; right:0; bottom:50px; text-align:center; color:#fff9; font-size:13px; font-weight:600; pointer-events:none; }
+    .spinning .deck-hint { visibility:hidden; }
+    /* Quay is pinned to the bottom of the screen so it is always in reach */
+    #spin {
+      position:fixed; z-index:6; left:14px; right:14px; bottom:calc(12px + env(safe-area-inset-bottom));
+      width:auto; margin:0; padding:12px; font-size:26px; box-shadow:0 6px 0 var(--ink), 0 10px 30px #2a1b3d88;
+    }
+    #spin:not(:disabled) { animation:nudge 2.4s ease-in-out infinite; }
+    .spinning #spin { animation:none; }
+    @keyframes nudge { 0%, 80%, 100% { scale:1; } 88% { scale:1.04; } }
+    .stage::after { content:""; position:fixed; z-index:5; left:0; right:0; bottom:0; height:calc(96px + env(safe-area-inset-bottom));
+      background:linear-gradient(transparent, #c7a8ffee 45%); pointer-events:none; }
+    .layout > .panel { margin-top:4px; }
+
+    /* result: full-screen reveal like a prize card */
+    .modal.open { align-items:stretch; padding:14px 16px calc(16px + env(safe-area-inset-bottom)); overflow:hidden;
+      background:radial-gradient(circle at 50% 38%, #6a46c2f2, #1f1330f7 72%); }
+    .rays { display:block; position:absolute; left:50%; top:38%; width:180vmax; height:180vmax; margin:-90vmax 0 0 -90vmax; opacity:.22;
+      background:repeating-conic-gradient(#ffe36e 0 7deg, transparent 7deg 20deg); animation:rays 26s linear infinite;
+      -webkit-mask:radial-gradient(circle, #000 8%, transparent 46%); mask:radial-gradient(circle, #000 8%, transparent 46%); }
+    @keyframes rays { to { transform:rotate(1turn); } }
+    .result { display:flex; flex-direction:column; max-width:440px; margin:0 auto; padding:52px 0 0;
+      background:none; border:0; box-shadow:none; animation:none; }
+    .result .x { left:0; right:auto; top:0; }
+    .prize { position:relative; flex:1; min-height:0; display:flex; flex-direction:column; margin:0 10px;
+      background:var(--parch); border:4px solid var(--ink); border-radius:26px; box-shadow:7px 8px 0 var(--ink);
+      padding:30px 16px 18px; animation:prize .7s cubic-bezier(.2,1.5,.4,1); }
+    @keyframes prize { from { transform:translateY(-6vh) scale(.5) rotate(-10deg); opacity:0; } }
+    .result .kicker { position:absolute; top:-20px; left:50%; translate:-50% 0; margin:0; white-space:nowrap; font-size:18px; }
+    .result .kicker + br { display:none; }
+    .result img { flex:1; min-height:0; width:100%; height:auto; max-height:52vh; transform:rotate(-1.5deg); border-radius:18px; }
+    .result h3 { font-size:28px; }
+    .result p { margin-bottom:0; }
+    .result .actions { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:22px; padding:0 10px; }
+    .result .actions button { width:100%; padding:13px 8px; font-size:19px; border-radius:999px; }
+    .result .actions #close, .result #again[hidden] + #share { grid-column:1 / -1; }
+    #close { order:-1; background:var(--butter); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toast, #spin:not(:disabled) { animation:none; }
+    .result, .prize, .rays, .dcard.won, .spinning .pointer { animation:none; }
+    #fx { display:none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Hôm nay ăn gì? <span class="moon">🔮</span></h1>
+    <p class="tagline">Dán link quán ShopeeFood hoặc tìm quán gần bạn, quay một vòng, để vũ trụ chọn giúp.</p>
+    <div class="me">Bạn là <b id="meName"></b></div>
+  </header>
+
+  <form id="form">
+    <input id="url" type="url" required aria-label="Link quán ShopeeFood" placeholder="https://shopeefood.vn/u/t7jp6ms">
+    <button id="load" type="submit">Lấy thực đơn</button>
+    <button id="near" type="button" aria-label="Tìm quán gần tôi">📍<span class="lbl"> Quán gần tôi</span></button>
+  </form>
+  <div id="status" class="status" role="status"></div>
+
+  <div class="layout">
+    <section class="stage" id="stage">
+      <div class="wheel-wrap">
+        <svg class="pointer" viewBox="0 0 60 80" aria-hidden="true">
+          <path d="M30 78 L6 26 L18 6 L42 6 L54 26 Z" fill="#7ef0c4" stroke="#2a1b3d" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M18 6 L30 26 L42 6 M6 26 H54 M30 26 V78" fill="none" stroke="#2a1b3d" stroke-width="2.5" stroke-linejoin="round" opacity=".55"/>
+          <path d="M14 22 L21 11" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <canvas id="wheel" width="1000" height="1000" aria-label="Vòng quay món ăn"></canvas>
+      </div>
+      <div class="deck" id="deck" aria-hidden="true">
+        <div class="pedestal"></div>
+        <div class="deck-empty" id="deckEmpty"></div>
+        <div class="deck-hint">Vuốt thẻ hoặc bấm Quay</div>
+      </div>
+      <button id="spin" disabled>Quay! ✨</button>
+    </section>
+
+    <aside class="panel">
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="menu" id="tabMenu">Thực đơn</button>
+        <button role="tab" aria-selected="false" data-tab="hist" id="tabHist">Lịch sử quay</button>
+        <button role="tab" aria-selected="false" data-tab="feed" id="tabFeed">Mọi người</button>
+      </div>
+      <div class="tab-body" id="paneMenu">
+        <h2 id="shopName">Chưa có quán nào</h2>
+        <div class="shop" id="shopAddr">Dán link ở trên, hoặc bấm 📍 để tìm quán quanh bạn.</div>
+        <form class="area" id="area" hidden>
+          <select id="city" aria-label="Tỉnh/thành"></select>
+          <select id="district" aria-label="Quận/huyện"></select>
+          <button type="submit">Tìm quán</button>
+        </form>
+        <div class="tools" id="tools" hidden>
+          <button data-act="all">Chọn hết</button>
+          <button data-act="none">Bỏ hết</button>
+          <button data-act="shops" id="backShops" hidden>📍 Quán gần đây</button>
+          <button data-act="area" id="pickArea" hidden>Đổi khu vực</button>
+        </div>
+        <ul id="list"></ul>
+      </div>
+      <div class="tab-body hist" id="paneHist" hidden>
+        <ul id="histList"></ul>
+        <div class="hist-foot" id="histFoot" hidden>
+          <span id="histCount"></span>
+          <button id="histClear">Xoá lịch sử</button>
+        </div>
+      </div>
+      <div class="tab-body feed" id="paneFeed" hidden>
+        <ul id="feedList"><li class="empty">Chưa ai quay. Bạn mở hàng đi!</li></ul>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="rName">
+  <div class="rays"></div>
+  <div class="result">
+    <button class="x" id="x" aria-label="Đóng">✕</button>
+    <div class="prize">
+      <span class="kicker" id="rKicker">Vũ trụ đã chọn!</span><br>
+      <img id="rImg" alt="">
+      <h3 id="rName"></h3>
+      <p id="rMeta"></p>
+    </div>
+    <div class="actions">
+      <button class="again" id="again">Quay lại</button>
+      <button class="share" id="share">📸 Chia sẻ</button>
+      <button id="close">Chốt món này!</button>
+    </div>
+  </div>
+</div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <div class="sheet-box">
+    <h3 id="sheetTitle">Khoe với bạn bè</h3>
+    <img id="sheetImg" alt="Ảnh kết quả để chia sẻ">
+    <div class="sheet-link">
+      <input id="sheetLink" readonly aria-label="Link chia sẻ">
+      <button id="copyLink">Sao chép</button>
+    </div>
+    <div class="sheet-btns">
+      <a id="saveImg" download>Tải ảnh</a>
+      <button id="shareLink" hidden>Gửi link…</button>
+      <button class="sheet-close wide" id="sheetClose">Đóng</button>
+    </div>
+  </div>
+</div>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<script>
+const $ = id => document.getElementById(id);
+const INK = '#2a1b3d';
+const COLORS = ['#ff9ecb', '#ffe36e', '#8ef0c9', '#c3b0ff', '#8fd3ff', '#ffb77a'];
+const HIST_KEY = 'spinHistory';
+const HIST_MAX = 50;
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ctx = $('wheel').getContext('2d');
+let dishes = [];          // full menu
+let shop = {};
+let pool = [];            // dishes currently on the wheel
+let angle = 0;            // current rotation (radians)
+let spinning = false;
+let lastEntry = null;     // history entry of the latest spin
+let lastWinner = null;    // dish shown in the result modal
+let sharedBy = null;      // set when the modal shows a result someone shared with us
+let menuUrl = '';         // shop link the current menu was loaded from
+let deckPos = 0;          // mobile deck: continuous index of the centre card
+let mode = 'dish';        // 'dish': wheel holds the menu; 'shop': wheel holds nearby shops
+let nearShops = [];       // last nearby search, kept so we can go back to it after a menu
+let nearInfo = null;
+let loadingMenu = false;   // a menu is being fetched: keep the wheel locked until it lands
+const mobile = matchMedia('(max-width: 700px)');
+const SLOTS = [-2, -1, 1, 2, 0];   // centre card last so it paints on top
+
+$('url').value = new URLSearchParams(location.search).get('url') || '';
+
+function setStatus(msg, isError = false) {
+  $('status').textContent = msg;
+  $('status').className = 'status' + (isError ? ' error' : '');
+}
+
+function emptyText() {
+  if (loadingMenu) return 'Đang tải thực đơn…';
+  if (dishes.length) return mode === 'shop' ? 'Tick ít nhất 1 quán nha' : 'Tick ít nhất 1 món nha';
+  return 'Dán link hoặc bấm 📍 để tìm quán';
+}
+
+function truncate(text, maxWidth) {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  while (text.length > 1 && ctx.measureText(text + '…').width > maxWidth) text = text.slice(0, -1);
+  return text + '…';
+}
+
+function drawRim(c, r) {
+  ctx.beginPath(); ctx.arc(c, c, r + 26, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffc83d'; ctx.fill();
+  ctx.lineWidth = 8; ctx.strokeStyle = INK; ctx.stroke();
+  // light bulbs around the rim; they chase while spinning
+  const n = 24, phase = spinning ? Math.floor(performance.now() / 90) % 2 : 0;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    ctx.beginPath(); ctx.arc(c + Math.cos(a) * (r + 13), c + Math.sin(a) * (r + 13), 9, 0, Math.PI * 2);
+    ctx.fillStyle = (i % 2 === phase) ? '#fffbe8' : '#ff7eb6'; ctx.fill();
+    ctx.lineWidth = 3; ctx.stroke();
+  }
+}
+
+function draw() {
+  const size = 1000, c = size / 2, r = c - 50;
+  ctx.clearRect(0, 0, size, size);
+  drawRim(c, r);
+  ctx.lineJoin = 'round';
+  if (!pool.length) {
+    ctx.beginPath(); ctx.arc(c, c, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff4d6'; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.fillStyle = '#6d5a86'; ctx.font = '700 44px "Baloo 2", system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(emptyText(), c, c);
+    return;
+  }
+  const slice = (Math.PI * 2) / pool.length;
+  const fontSize = Math.max(15, Math.min(38, 950 / pool.length));
+  pool.forEach((d, i) => {
+    const start = angle + i * slice;
+    ctx.beginPath(); ctx.moveTo(c, c); ctx.arc(c, c, r, start, start + slice); ctx.closePath();
+    // avoid two neighbouring slices sharing a color when the count wraps
+    const ci = (pool.length % COLORS.length === 1 && i === pool.length - 1) ? 2 : i % COLORS.length;
+    ctx.fillStyle = COLORS[ci]; ctx.fill();
+    ctx.strokeStyle = INK; ctx.lineWidth = pool.length > 40 ? 2.5 : 4; ctx.stroke();
+    ctx.save();
+    ctx.translate(c, c); ctx.rotate(start + slice / 2);
+    ctx.fillStyle = INK; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.font = `700 ${fontSize}px "Baloo 2", system-ui`;
+    ctx.fillText(truncate(d.name, r - 140), r - 22, 2);
+    ctx.restore();
+  });
+  ctx.beginPath(); ctx.arc(c, c, r, 0, Math.PI * 2); ctx.lineWidth = 8; ctx.strokeStyle = INK; ctx.stroke();
+  // hub
+  ctx.beginPath(); ctx.arc(c, c, 78, 0, Math.PI * 2); ctx.fillStyle = '#ff7eb6'; ctx.fill();
+  ctx.lineWidth = 7; ctx.stroke();
+  ctx.beginPath(); ctx.arc(c, c, 56, 0, Math.PI * 2); ctx.fillStyle = '#fff4d6'; ctx.fill(); ctx.lineWidth = 4; ctx.stroke();
+  ctx.fillStyle = INK; ctx.font = '800 46px "Baloo 2", system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(pool.length, c, c + 3);
+}
+
+// ---- mobile card deck ----
+const deckCards = SLOTS.map(() => {
+  const el = document.createElement('div');
+  el.className = 'dcard';
+  el.innerHTML = '<div class="ph"><img alt=""></div><div class="dn"></div><div class="dp"></div>';
+  $('deck').insertBefore(el, $('deckEmpty'));
+  return el;
+});
+function fillCard(el, i) {
+  const d = pool[i];
+  el.dataset.i = i;
+  const img = el.querySelector('img');
+  img.hidden = !d.image;
+  if (d.image) img.src = d.image;
+  el.querySelector('.ph').style.background = COLORS[i % COLORS.length];
+  el.querySelector('.dn').textContent = d.name;
+  el.querySelector('.dp').textContent = d.priceText;
+}
+function drawDeck(blur = 0) {
+  const n = pool.length;
+  $('deckEmpty').textContent = n ? '' : emptyText();
+  const base = Math.round(deckPos), frac = deckPos - base;
+  deckCards.forEach((el, j) => {
+    el.hidden = !n;
+    if (!n) return;
+    const k = SLOTS[j], off = k - frac, a = Math.abs(off);
+    const i = ((base + k) % n + n) % n;
+    if (el.dataset.i !== String(i)) fillCard(el, i);
+    el.style.transform = `translateX(${off * 74}%) translateY(${a * a * 7}px) rotate(${off * 9}deg) scale(${1 - Math.min(a, 2.2) * .15})`;
+    el.style.filter = `brightness(${1 - Math.min(a, 1) * .38})` + (blur ? ` blur(${blur}px)` : '');
+    el.style.zIndex = 10 - Math.round(a * 2);
+  });
+}
+function preload() {
+  for (const d of dishes) if (d.image) new Image().src = d.image;
+}
+
+function renderList() {
+  $('list').innerHTML = '';
+  $('list').classList.toggle('shops', mode === 'shop');
+  $('backShops').hidden = mode === 'shop' || !nearShops.length;
+  $('pickArea').hidden = mode !== 'shop';
+  $('spin').textContent = mode === 'shop' ? 'Quay quán! 🛵' : 'Quay! ✨';
+  $('tabMenu').textContent = mode === 'shop' ? 'Quán gần' : 'Thực đơn';
+  if (mode === 'shop') {
+    for (const d of dishes) {
+      const li = document.createElement('li');
+      li.className = d.open ? '' : 'shut';
+      li.innerHTML = `<label><input type="checkbox" data-id="${d.id}"><span class="sn"><span></span><span class="sm"></span></span><span class="price"></span></label><button class="go">Xem món</button>`;
+      li.querySelector('input').checked = d.on;
+      li.querySelector('.sn > span').textContent = d.name;
+      li.querySelector('.sm').textContent = [d.open ? '' : 'Đang đóng', d.rating ? `⭐ ${d.rating}` : '', d.category].filter(Boolean).join(', ');
+      li.querySelector('.price').textContent = d.priceText;
+      li.querySelector('.go').addEventListener('click', () => openShop(d));
+      $('list').appendChild(li);
+    }
+    $('tools').hidden = false;
+    syncPool();
+    return;
+  }
+  for (const d of dishes) {
+    const li = document.createElement('li');
+    li.innerHTML = `<label><input type="checkbox" checked data-id="${d.id}"><span></span><span class="price"></span></label>`;
+    li.querySelector('span').textContent = d.name;
+    li.querySelector('.price').textContent = d.priceText;
+    $('list').appendChild(li);
+  }
+  $('tools').hidden = !dishes.length && !nearShops.length;
+  syncPool();
+}
+
+function syncPool() {
+  const on = new Set([...$('list').querySelectorAll('input:checked')].map(i => Number(i.dataset.id)));
+  pool = dishes.filter(d => on.has(d.id));
+  if (mode === 'shop') for (const d of dishes) d.on = on.has(d.id);
+  $('spin').disabled = spinning || loadingMenu || !pool.length;
+  deckCards.forEach(el => el.dataset.i = '');
+  if (pool.length) deckPos = ((Math.round(deckPos) % pool.length) + pool.length) % pool.length;
+  draw();
+  drawDeck();
+}
+
+$('list').addEventListener('change', syncPool);
+$('tools').addEventListener('click', e => {
+  const act = e.target.dataset.act; if (!act) return;
+  if (act === 'shops') return showShops();
+  if (act === 'area') return openAreaPicker();
+  $('list').querySelectorAll('input').forEach(i => i.checked = act === 'all');
+  syncPool();
+});
+
+// ---- tabs ----
+$('tabMenu').parentElement.addEventListener('click', e => {
+  const tab = e.target.dataset.tab; if (tab) showTab(tab);
+});
+
+// ---- spin history (localStorage) ----
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HIST_KEY)) || []; } catch { return []; }
+}
+function saveHistory(list) {
+  localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, HIST_MAX)));
+  renderHistory();
+}
+function timeAgo(ts) {
+  const s = Math.round((Date.now() - ts) / 1000);
+  if (s < 60) return 'vừa xong';
+  if (s < 3600) return `${Math.floor(s / 60)} phút trước`;
+  if (s < 86400) return `${Math.floor(s / 3600)} giờ trước`;
+  return new Date(ts).toLocaleDateString('vi-VN');
+}
+function renderHistory() {
+  const list = loadHistory();
+  $('tabHist').textContent = list.length ? `Lịch sử quay (${list.length})` : 'Lịch sử quay';
+  $('histList').innerHTML = '';
+  $('histFoot').hidden = !list.length;
+  if (!list.length) {
+    $('histList').innerHTML = '<li class="empty">Chưa quay lần nào. Quay thử một vòng đi!</li>';
+    return;
+  }
+  const picked = list.filter(h => h.picked).length;
+  $('histCount').textContent = `${list.length} lần quay, chốt ${picked} món`;
+  for (const h of list) {
+    const li = document.createElement('li');
+    li.innerHTML = `${h.image ? '<img alt="">' : '<span class="noimg">🍽️</span>'}<div class="info"><div class="name"></div><div class="meta"></div></div>`;
+    if (h.image) li.querySelector('img').src = h.image;
+    li.querySelector('.name').textContent = h.name;
+    li.querySelector('.meta').textContent = `${h.priceText}, ${h.shop || 'quán không tên'}, ${timeAgo(h.at)}`;
+    if (h.picked) li.insertAdjacentHTML('beforeend', '<span class="badge">Đã chốt</span>');
+    $('histList').appendChild(li);
+  }
+}
+$('histClear').addEventListener('click', () => {
+  if (confirm('Xoá toàn bộ lịch sử quay?')) saveHistory([]);
+});
+
+$('form').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('load').disabled = true;
+  $('url').blur();   // close the on-screen keyboard so the deck is visible while loading
+  setStatus('Đang lấy thực đơn từ ShopeeFood… chờ xíu (5–15 giây)');
+  // Clear the old wheel (often the shop wheel) so nobody spins it again while waiting
+  const fromShops = mode === 'shop';
+  loadingMenu = true;
+  if (fromShops) { mode = 'dish'; dishes = []; angle = 0; deckPos = 0; $('shopAddr').textContent = ''; }
+  renderList();
+  $('spin').textContent = 'Đang tải món… ⏳';
+  try {
+    const res = await fetch('/api/menu?url=' + encodeURIComponent($('url').value));
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không lấy được thực đơn, thử lại nhé');
+    mode = 'dish';
+    dishes = data.dishes;
+    shop = data.shop;
+    menuUrl = $('url').value.trim();
+    $('shopName').textContent = shop.name || 'Quán';
+    $('shopAddr').textContent = shop.address || '';
+    angle = 0;
+    deckPos = 0;
+    renderList();
+    preload();
+    setStatus(`Có ${dishes.length} món. Bỏ tick món bạn không thích rồi bấm Quay!`);
+  } catch (err) {
+    setStatus(err.message, true);
+    if (fromShops) {
+      // Back to the shop wheel, but say why: on mobile the status line sits off-screen above the deck
+      showShops();
+      setStatus(`Chưa mở được thực đơn ${$('url').dataset.shop || 'quán này'}: ${err.message}`, true);
+      $('status').scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  } finally {
+    $('load').disabled = false;
+    loadingMenu = false;
+    renderList();
+  }
+});
+
+function spin() {
+  if (spinning || loadingMenu || !pool.length) return;
+  spinning = true; $('spin').disabled = true; $('stage').classList.add('spinning');
+  deckCards.forEach(el => el.classList.remove('won'));
+  (mobile.matches ? spinDeck : spinWheel)();
+}
+
+function finishSpin(d) {
+  spinning = false; $('spin').disabled = false; $('stage').classList.remove('spinning');
+  if (mode === 'shop') { lastEntry = null; return; }
+  lastEntry = { at: Date.now(), name: d.name, priceText: d.priceText, image: d.image, shop: shop.name || '', picked: false };
+  saveHistory([lastEntry, ...loadHistory()]);
+  postEvent('spin', d.name);
+}
+
+function spinWheel() {
+  const winner = Math.floor(Math.random() * pool.length);
+  const slice = (Math.PI * 2) / pool.length;
+  // Pointer sits at -90°; land a random spot inside the winner's slice under it.
+  const target = -Math.PI / 2 - (winner + 0.15 + Math.random() * 0.7) * slice;
+  const from = angle;
+  const TAU = Math.PI * 2;
+  const delta = ((target - from) % TAU + TAU) % TAU;
+  const to = from + delta + TAU * (reduceMotion ? 1 : 5 + Math.floor(Math.random() * 3));
+  const duration = reduceMotion ? 800 : 4500, t0 = performance.now();
+  const ease = t => 1 - Math.pow(1 - t, 4);
+  (function frame(now) {
+    const t = Math.min(1, (now - t0) / duration);
+    angle = from + (to - from) * ease(t);
+    draw();
+    if (t < 1) return requestAnimationFrame(frame);
+    angle %= TAU;
+    draw();
+    finishSpin(pool[winner]);
+    showResult(pool[winner]);
+  })(t0);
+}
+
+// Flick through the dish cards like a slot reel, easing out onto the winner.
+function spinDeck() {
+  const n = pool.length;
+  const winner = Math.floor(Math.random() * n);
+  const from = Math.round(deckPos);
+  let dist = ((winner - from) % n + n) % n;
+  const minCards = reduceMotion ? 1 : 34;   // enough cards to feel like a whoosh even on a short menu
+  while (dist < minCards) dist += n;
+  const duration = reduceMotion ? 600 : 4600, t0 = performance.now();
+  const ease = t => 1 - Math.pow(1 - t, 4);
+  let prev = from, prevT = t0;
+  (function frame(now) {
+    const t = Math.min(1, (now - t0) / duration);
+    deckPos = from + dist * ease(t);
+    const speed = (deckPos - prev) / Math.max(1, now - prevT) * 1000;   // cards per second
+    prev = deckPos; prevT = now;
+    drawDeck(reduceMotion ? 0 : Math.min(3, speed / 8));
+    if (t < 1) return requestAnimationFrame(frame);
+    deckPos = winner;
+    drawDeck();
+    const card = deckCards[SLOTS.indexOf(0)];
+    if (!reduceMotion) card.classList.add('won');
+    finishSpin(pool[winner]);
+    setTimeout(() => showResult(pool[winner]), reduceMotion ? 0 : 650);
+  })(t0);
+}
+$('spin').addEventListener('click', spin);
+
+// swipe the deck sideways to spin
+let touchX = null;
+const swipeEnd = x => { if (touchX !== null && Math.abs(x - touchX) > 40) spin(); touchX = null; };
+$('deck').addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+$('deck').addEventListener('touchend', e => swipeEnd(e.changedTouches[0].clientX));
+$('deck').addEventListener('mousedown', e => { touchX = e.clientX; e.preventDefault(); });
+addEventListener('mouseup', e => swipeEnd(e.clientX));
+
+// ---- fireworks: rockets rise and burst around the result card, confetti rains down ----
+const fx = $('fx'), fctx = fx.getContext('2d');
+const FX_COLORS = ['#ffe36e', '#ff7eb6', '#7ef0c4', '#c3b0ff', '#8fd3ff', '#ffb77a', '#ffffff'];
+let parts = [], fxOn = false;
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+function burstAt(x, y) {
+  const color = pick(FX_COLORS), alt = pick(FX_COLORS), N = 44;
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2 + rnd(-.08, .08), sp = rnd(2.4, 5.4);
+    parts.push({ kind: 'spark', x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1,
+      decay: rnd(.013, .022), size: rnd(2, 3.4), color: i % 3 ? color : alt });
+  }
+}
+function rocket(tx, ty, delay) {
+  setTimeout(() => {
+    const x0 = tx + rnd(-40, 40), y0 = innerHeight + 10, frames = 30;
+    parts.push({ kind: 'rocket', x: x0, y: y0, vx: (tx - x0) / frames, vy: (ty - y0) / frames, ty, life: 1, decay: 0, size: 3, color: '#fff4d6' });
+    runFx();
+  }, delay);
+}
+function confetti(count) {
+  for (let i = 0; i < count; i++) {
+    parts.push({ kind: 'paper', x: rnd(0, innerWidth), y: rnd(-innerHeight * .5, -10), vx: rnd(-1, 1), vy: rnd(1.5, 3.5),
+      rot: rnd(0, 6.3), vr: rnd(-.2, .2), w: rnd(7, 12), h: rnd(4, 7), life: 1, decay: .0035, color: pick(FX_COLORS) });
+  }
+}
+function runFx() {
+  if (fxOn) return;
+  fxOn = true;
+  const r = devicePixelRatio || 1;
+  fx.width = innerWidth * r; fx.height = innerHeight * r;
+  fctx.setTransform(r, 0, 0, r, 0, 0);
+  (function tick() {
+    fctx.clearRect(0, 0, innerWidth, innerHeight);
+    const next = [];
+    for (const p of parts) {
+      if (p.kind === 'rocket') {
+        p.x += p.vx; p.y += p.vy;
+        if (p.y <= p.ty) { burstAt(p.x, p.y); continue; }
+        fctx.globalAlpha = 1; fctx.strokeStyle = p.color; fctx.lineWidth = 3; fctx.lineCap = 'round';
+        fctx.beginPath(); fctx.moveTo(p.x - p.vx * 3, p.y - p.vy * 3); fctx.lineTo(p.x, p.y); fctx.stroke();
+      } else if (p.kind === 'spark') {
+        p.vx *= .965; p.vy = p.vy * .965 + .06; p.x += p.vx; p.y += p.vy;
+        fctx.globalAlpha = Math.max(0, p.life); fctx.strokeStyle = p.color; fctx.lineWidth = p.size; fctx.lineCap = 'round';
+        fctx.beginPath(); fctx.moveTo(p.x - p.vx * 2.5, p.y - p.vy * 2.5); fctx.lineTo(p.x, p.y); fctx.stroke();
+      } else {
+        p.vx += rnd(-.05, .05); p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        fctx.globalAlpha = Math.min(1, p.life * 2);
+        fctx.save(); fctx.translate(p.x, p.y); fctx.rotate(p.rot);
+        fctx.fillStyle = p.color; fctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        fctx.strokeStyle = INK; fctx.lineWidth = 1.5; fctx.strokeRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        fctx.restore();
+      }
+      p.life -= p.decay;
+      if (p.life > 0 && p.y < innerHeight + 40) next.push(p);
+    }
+    parts = next;
+    if (parts.length) requestAnimationFrame(tick);
+    else { fxOn = false; fctx.clearRect(0, 0, innerWidth, innerHeight); }
+  })();
+}
+function fireworks() {
+  if (reduceMotion) return;
+  const box = document.querySelector('.prize').getBoundingClientRect();
+  const clampX = x => Math.min(innerWidth - 20, Math.max(20, x));
+  const clampY = y => Math.min(innerHeight * .75, Math.max(30, y));
+  const spots = [
+    [box.left, box.top + 30], [box.right, box.top + 70], [box.left + box.width * .5, box.top - 10],
+    [box.left + 10, box.top + box.height * .55], [box.right - 10, box.top + box.height * .45],
+    [box.left + box.width * .2, box.top + 10], [box.right - box.width * .2, box.top + 4],
+  ];
+  spots.forEach(([x, y], i) => rocket(clampX(x), clampY(y), 120 + i * 260));
+  confetti(mobile.matches ? 70 : 110);
+  runFx();
+}
+
+function showResult(d, by = null) {
+  lastWinner = d; sharedBy = by;
+  const isShop = mode === 'shop' && !by;
+  $('rKicker').textContent = by ? `${by} đã quay ra` : isShop ? 'Hôm nay ăn quán này!' : 'Vũ trụ đã chọn!';
+  $('close').textContent = by ? 'Tới lượt mình quay!' : isShop ? 'Quay món ở quán này 🍜' : 'Chốt món này!';
+  $('again').textContent = isShop ? 'Đổi quán khác' : 'Quay lại';
+  $('again').hidden = !!by;
+  $('share').hidden = isShop;
+  $('rImg').src = d.image || '';
+  $('rImg').style.display = d.image ? '' : 'none';
+  $('rName').textContent = d.name;
+  $('rMeta').textContent = isShop
+    ? [`cách ${d.priceText}`, d.rating ? `⭐ ${d.rating}` : '', d.category].filter(Boolean).join(', ')
+    : `${d.priceText}, nhóm ${d.category}`;
+  $('modal').classList.add('open');
+  $('close').focus();
+  fireworks();
+}
+function closeModal() { $('modal').classList.remove('open'); $('spin').focus(); }
+$('close').addEventListener('click', () => {
+  if (sharedBy) { closeModal(); spin(); return; }
+  if (mode === 'shop') { closeModal(); openShop(lastWinner); return; }
+  const list = loadHistory();
+  if (lastEntry && list[0]?.at === lastEntry.at) { list[0].picked = true; saveHistory(list); postEvent('pick', lastEntry.name); }
+  closeModal();
+});
+$('x').addEventListener('click', closeModal);
+$('again').addEventListener('click', () => { closeModal(); spin(); });
+$('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (!$('sheet').hidden) closeSheet();
+  else if ($('modal').classList.contains('open')) closeModal();
+});
+
+// ---- share: draw a result card, hand it to the native share sheet or offer download + link ----
+const CARD_W = 1080, CARD_H = 1350;
+function shareLink(d) {
+  const u = new URL(location.origin + '/');
+  u.searchParams.set('url', menuUrl);
+  u.searchParams.set('d', d.id);
+  u.searchParams.set('by', sharedBy || me);
+  return u.toString();
+}
+function loadImage(src) {
+  return new Promise(resolve => {
+    if (!src) return resolve(null);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';   // the food CDN sends CORS headers, so the canvas stays exportable
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src.split('@')[0];     // full-size photo instead of the 180px thumbnail
+  });
+}
+function roundRect(c, x, y, w, h, r) { c.beginPath(); c.roundRect(x, y, w, h, r); }
+function wrapLines(c, text, maxW, maxLines) {
+  const words = text.split(/\s+/), lines = [];
+  let line = '';
+  for (const w of words) {
+    const t = line ? line + ' ' + w : w;
+    if (c.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;
+  }
+  lines.push(line);
+  if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] = lines[maxLines - 1].replace(/\s*\S*$/, '…'); }
+  return lines;
+}
+async function makeCard(d, withPhoto = true) {
+  await Promise.all(['800 90px "Baloo 2"', '700 40px "Baloo 2"'].map(f => document.fonts?.load(f).catch(() => {})));
+  const cv = document.createElement('canvas'); cv.width = CARD_W; cv.height = CARD_H;
+  const c = cv.getContext('2d');
+  const font = (w, px) => `${w} ${px}px "Baloo 2", "Comic Sans MS", sans-serif`;
+  // sky
+  const g = c.createLinearGradient(0, 0, 0, CARD_H);
+  g.addColorStop(0, '#5b3fa8'); g.addColorStop(.4, '#8a63d2'); g.addColorStop(.75, '#c7a8ff'); g.addColorStop(1, '#ffd6ec');
+  c.fillStyle = g; c.fillRect(0, 0, CARD_W, CARD_H);
+  c.fillStyle = '#fff';
+  [[120, 70], [930, 110], [610, 60], [300, 200], [1000, 260], [60, 330], [840, 40]].forEach(([x, y], i) => { c.globalAlpha = .5 + (i % 3) * .2; c.beginPath(); c.arc(x, y, 4 + (i % 2) * 2, 0, 7); c.fill(); });
+  c.globalAlpha = 1;
+  // title
+  c.textAlign = 'center'; c.lineJoin = 'round';
+  c.font = font(800, 92);
+  c.save(); c.translate(CARD_W / 2, 150); c.rotate(-.03);
+  c.fillStyle = '#2a1b3d'; c.fillText('Hôm nay ăn gì? 🔮', 0, 10);
+  c.lineWidth = 12; c.strokeStyle = '#2a1b3d'; c.strokeText('Hôm nay ăn gì? 🔮', 0, 0);
+  c.fillStyle = '#ffe36e'; c.fillText('Hôm nay ăn gì? 🔮', 0, 0);
+  c.restore();
+  // prize card
+  const x = 110, y = 270, w = 860, h = 900;
+  c.fillStyle = '#2a1b3d'; roundRect(c, x + 18, y + 20, w, h, 44); c.fill();
+  c.fillStyle = '#fff4d6'; roundRect(c, x, y, w, h, 44); c.fill();
+  c.lineWidth = 8; c.strokeStyle = '#2a1b3d'; c.stroke();
+  // photo (cover-cropped)
+  const px = x + 50, py = y + 70, pw = w - 100, ph = 560;
+  const img = withPhoto ? await loadImage(d.image) : null;
+  c.save(); roundRect(c, px, py, pw, ph, 30); c.clip();
+  c.fillStyle = '#7ef0c4'; c.fillRect(px, py, pw, ph);
+  if (img) {
+    const s = Math.max(pw / img.naturalWidth, ph / img.naturalHeight);
+    const iw = img.naturalWidth * s, ih = img.naturalHeight * s;
+    c.drawImage(img, px + (pw - iw) / 2, py + (ph - ih) / 2, iw, ih);
+  } else { c.font = font(400, 200); c.fillText('🍽️', CARD_W / 2, py + ph / 2 + 70); }
+  c.restore();
+  c.lineWidth = 6; roundRect(c, px, py, pw, ph, 30); c.stroke();
+  // kicker pill
+  const kicker = `${sharedBy || me} đã quay ra`;
+  c.font = font(800, 40);
+  const kw = c.measureText(kicker).width + 70;
+  c.save(); c.translate(CARD_W / 2, y + 4); c.rotate(-.04);
+  c.fillStyle = '#ff7eb6'; roundRect(c, -kw / 2, -34, kw, 68, 34); c.fill(); c.lineWidth = 6; c.stroke();
+  c.fillStyle = '#2a1b3d'; c.fillText(kicker, 0, 14);
+  c.restore();
+  // dish name + meta
+  c.fillStyle = '#2a1b3d'; c.font = font(800, 66);
+  const lines = wrapLines(c, d.name, pw, 2);
+  lines.forEach((l, i) => c.fillText(l, CARD_W / 2, py + ph + 92 + i * 70));
+  c.fillStyle = '#6d5a86'; c.font = font(700, 38);
+  const meta = wrapLines(c, [d.priceText, shop.name].filter(Boolean).join(' tại '), pw, 1)[0];
+  c.fillText(meta, CARD_W / 2, py + ph + 92 + lines.length * 70 + 8);
+  // footer
+  c.fillStyle = '#2a1b3d'; c.font = font(800, 44);
+  c.fillText(`Quay thử tại ${location.host}`, CARD_W / 2, CARD_H - 70);
+  try {
+    return await new Promise((resolve, reject) => cv.toBlob(b => b ? resolve(b) : reject(new Error('toBlob')), 'image/png'));
+  } catch (e) {
+    if (withPhoto) return makeCard(d, false);   // photo tainted the canvas: fall back to the placeholder
+    throw e;
+  }
+}
+let sheetUrl = null;
+function openSheet(blob, fileName, link, text) {
+  if (sheetUrl) URL.revokeObjectURL(sheetUrl);
+  sheetUrl = URL.createObjectURL(blob);
+  $('sheetImg').src = sheetUrl;
+  $('saveImg').href = sheetUrl; $('saveImg').download = fileName;
+  $('sheetLink').value = link;
+  $('shareLink').hidden = !navigator.share;
+  $('shareLink').onclick = () => navigator.share({ title: 'Hôm nay ăn gì?', text, url: link }).catch(() => {});
+  $('copyLink').textContent = 'Sao chép';
+  $('sheet').hidden = false;
+  $('copyLink').focus();
+}
+function closeSheet() { $('sheet').hidden = true; $('share').focus(); }
+$('sheetClose').addEventListener('click', closeSheet);
+$('sheet').addEventListener('click', e => { if (e.target.id === 'sheet') closeSheet(); });
+$('copyLink').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('sheetLink').value); }
+  catch { $('sheetLink').select(); document.execCommand('copy'); }
+  $('copyLink').textContent = 'Đã chép!';
+});
+$('share').addEventListener('click', async () => {
+  const d = lastWinner; if (!d) return;
+  $('share').disabled = true; $('share').textContent = 'Đang tạo ảnh…';
+  try {
+    const blob = await makeCard(d);
+    const file = new File([blob], `hom-nay-an-gi-${d.id}.png`, { type: 'image/png' });
+    const link = shareLink(d);
+    const text = `${sharedBy || me} đã quay ra món ${d.name}${shop.name ? ' ở ' + shop.name : ''}. Quay thử lượt của bạn nè:`;
+    if (navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: 'Hôm nay ăn gì?', text: `${text} ${link}` }); return; }
+      catch (e) { if (e.name === 'AbortError') return; }
+    }
+    openSheet(blob, file.name, link, text);
+  } catch {
+    setStatus('Không tạo được ảnh chia sẻ, thử lại nhé', true);
+  } finally {
+    $('share').disabled = false; $('share').textContent = '📸 Chia sẻ';
+  }
+});
+
+// ---- live feed: everyone gets a random nickname; spins and picks are broadcast to all open tabs ----
+const me = localStorage.getItem('nickname') || `user_${1000 + Math.floor(Math.random() * 9000)}`;
+localStorage.setItem('nickname', me);
+$('meName').textContent = me;
+const feedItems = [];
+function evText(ev) {
+  const el = document.createElement('span');
+  el.innerHTML = '<b></b> <span></span> <b></b>';
+  el.children[0].textContent = ev.user === me ? 'Bạn' : ev.user;
+  el.children[1].textContent = ev.kind === 'pick' ? 'đã chọn món' : 'vừa quay ra';
+  el.children[2].textContent = ev.dish;
+  return el;
+}
+function avatar(user) {
+  const hue = [...user].reduce((h, c) => h * 31 + c.charCodeAt(0), 7) % 360;
+  const el = document.createElement('span');
+  el.className = 'ava'; el.style.background = `hsl(${hue} 85% 78%)`; el.textContent = user.slice(-2);
+  return el;
+}
+function postEvent(kind, dish) {
+  fetch('/api/events', { method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ kind, user: me, dish, shop: shop.name || '' }) }).catch(() => {});
+}
+function renderFeed() {
+  $('feedList').innerHTML = '';
+  if (!feedItems.length) { $('feedList').innerHTML = '<li class="empty">Chưa ai quay. Bạn mở hàng đi!</li>'; return; }
+  for (const ev of feedItems) {
+    const li = document.createElement('li');
+    li.append(avatar(ev.user));
+    const info = document.createElement('div');
+    info.innerHTML = '<div></div><div class="meta"></div>';
+    info.firstChild.append(evText(ev));
+    info.lastChild.textContent = [ev.shop, timeAgo(ev.at)].filter(Boolean).join(', ');
+    li.append(info);
+    $('feedList').append(li);
+  }
+}
+function toast(ev) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (ev.user === me ? ' mine' : '');
+  el.append(avatar(ev.user), evText(ev));
+  $('toasts').prepend(el);
+  while ($('toasts').children.length > 3) $('toasts').lastChild.remove();
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, 5000);
+}
+const stream = new EventSource('/api/events/stream');
+stream.addEventListener('backlog', e => { feedItems.splice(0, Infinity, ...JSON.parse(e.data).reverse()); renderFeed(); });
+stream.onmessage = e => {
+  const ev = JSON.parse(e.data);
+  feedItems.unshift(ev); feedItems.length = Math.min(feedItems.length, 30);
+  renderFeed(); toast(ev);
+};
+setInterval(renderFeed, 60000);
+
+// ---- nearby shops: locate the user (or let them pick an area), then spin for a shop ----
+function showTab(tab) {
+  for (const b of $('tabMenu').parentElement.children) b.setAttribute('aria-selected', b.dataset.tab === tab);
+  $('paneMenu').hidden = tab !== 'menu';
+  $('paneHist').hidden = tab !== 'hist';
+  $('paneFeed').hidden = tab !== 'feed';
+}
+function showShops() {
+  mode = 'shop';
+  dishes = nearShops;
+  angle = 0; deckPos = 0;
+  $('area').hidden = true;
+  $('shopName').textContent = 'Quán quanh bạn';
+  const far = Math.ceil(Math.max(...nearShops.map(d => d.km || 0)));
+  $('shopAddr').textContent = `${nearShops.length} quán trong khoảng ${far} km, khu ${nearInfo.districts.join(', ')}`;
+  renderList();
+  showTab('menu');
+}
+function openShop(d) {
+  $('url').value = d.url;
+  $('url').dataset.shop = d.name;
+  $('shopName').textContent = d.name;
+  $('stage').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  $('form').requestSubmit();
+}
+async function findNearby(lat, lng) {
+  $('near').disabled = true;
+  setStatus('Đang tìm quán quanh bạn trên ShopeeFood… chờ xíu (10–20 giây)');
+  try {
+    const res = await fetch(`/api/nearby?lat=${lat}&lng=${lng}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không tìm được quán, thử lại nhé');
+    const anyOpen = data.shops.some(s => s.open);
+    nearShops = data.shops.map(s => ({
+      id: s.id, name: s.name, url: s.url, image: s.image, rating: s.rating, open: s.open,
+      km: s.km, priceText: s.km == null ? '?' : `${s.km} km`, category: s.address,
+      on: s.open || !anyOpen,   // closed shops start unticked unless everything is closed
+    }));
+    nearInfo = data;
+    showShops();
+    setStatus(anyOpen
+      ? `Tìm thấy ${nearShops.length} quán. Bấm Quay quán, trúng quán nào thì quay món ở quán đó!`
+      : `Tìm thấy ${nearShops.length} quán nhưng giờ đều đang đóng, vẫn quay thử được nhé.`);
+  } catch (err) {
+    setStatus(err.message, true);
+  } finally {
+    $('near').disabled = false;
+  }
+}
+$('near').addEventListener('click', () => {
+  if (!navigator.geolocation) return openAreaPicker('Trình duyệt không lấy được vị trí, chọn khu vực nhé');
+  $('near').disabled = true;
+  setStatus('Đang lấy vị trí của bạn…');
+  navigator.geolocation.getCurrentPosition(
+    pos => findNearby(pos.coords.latitude.toFixed(5), pos.coords.longitude.toFixed(5)),
+    err => {
+      $('near').disabled = false;
+      openAreaPicker(err.code === err.PERMISSION_DENIED
+        ? 'Bạn chưa cho phép vị trí. Chọn quận bên dưới để tìm quán nhé'
+        : 'Không lấy được vị trí. Chọn quận bên dưới để tìm quán nhé');
+    },
+    { timeout: 12000, maximumAge: 5 * 60 * 1000 },
+  );
+});
+
+let areas = null;
+function fillDistricts() {
+  const city = areas.find(c => String(c.id) === $('city').value) || areas[0];
+  $('district').innerHTML = '';
+  for (const d of city.districts) $('district').add(new Option(d.name, `${d.lat},${d.lng}`));
+}
+async function openAreaPicker(msg) {
+  if (typeof msg === 'string') setStatus(msg, true);
+  showTab('menu');
+  $('area').hidden = false;
+  if (areas) return $('district').focus();
+  $('city').innerHTML = '<option>Đang tải…</option>';
+  try {
+    const res = await fetch('/api/areas');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    areas = data;
+    $('city').innerHTML = '';
+    for (const c of areas) $('city').add(new Option(c.name, c.id));
+    fillDistricts();
+  } catch {
+    $('area').hidden = true;
+    setStatus('Không tải được danh sách khu vực, thử lại sau nhé', true);
+  }
+}
+$('city').addEventListener('change', fillDistricts);
+$('area').addEventListener('submit', e => {
+  e.preventDefault();
+  const [lat, lng] = $('district').value.split(',');
+  if (lat && lng) findNearby(lat, lng);
+});
+
+// Opening a link with ?url= loads that shop right away; with &d= it also shows the result someone shared
+(async () => {
+  const q = new URLSearchParams(location.search);
+  if (!q.get('url')) return;
+  await new Promise(r => setTimeout(r));   // let the submit listener settle
+  const loaded = new Promise(r => { const t = setInterval(() => { if (!$('load').disabled) { clearInterval(t); r(); } }, 100); });
+  $('form').requestSubmit();
+  if (!q.get('d')) return;
+  await loaded;
+  const d = dishes.find(x => String(x.id) === q.get('d'));
+  const by = /^user_\d{4}$/.test(q.get('by') || '') ? q.get('by') : 'Một người bạn';
+  if (d) showResult(d, by === me ? null : by);
+  else if (dishes.length) setStatus('Món được chia sẻ không còn trong thực đơn, quay món khác nhé!');
+  history.replaceState(null, '', '?url=' + encodeURIComponent(q.get('url')));
+})();
+
+renderHistory();
+draw();
+drawDeck();
+document.fonts?.ready.then(draw);
+</script>
+</body>
+</html>

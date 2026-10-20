@@ -1,0 +1,25 @@
+name: shopeefood-wheel
+services:
+  wheel:
+    build: .
+    image: shopeefood-wheel
+    container_name: shopeefood-wheel
+    restart: unless-stopped
+    shm_size: 512m
+    ports:
+      - "127.0.0.1:3456:3000"
+      # Expose only on the Tailscale interface (reachable from the tailnet, not the LAN)
+      - "${TAILSCALE_IP:-100.64.0.6}:3456:3000"
+
+  # Public URL through Cloudflare Tunnel. Enable with: docker compose --profile cloudflare up -d
+  # TUNNEL_DIR must contain config.yml (ingress -> http://wheel:3000) and creds.json for the tunnel.
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: shopeefood-wheel-tunnel
+    profiles: [cloudflare]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
+    volumes:
+      - ${TUNNEL_DIR:-./cloudflared}/config.yml:/etc/cloudflared/config.yml:ro
+      - ${TUNNEL_DIR:-./cloudflared}/creds.json:/etc/cloudflared/creds.json:ro
+    depends_on: [wheel]
