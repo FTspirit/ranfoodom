@@ -898,6 +898,7 @@ $('close').addEventListener('click', e => {
   if (!(e.currentTarget.target === '_blank' && !sharedBy && mode !== 'shop')) e.preventDefault();
   if (sharedBy) { closeModal(); spin(); return; }
   if (mode === 'shop') { const d = lastWinner; closeModal(); openShop(d); return; }
+  if (e.currentTarget.target === '_blank' && lastWinner && copyText(lastWinner.name)) noteToast(`Đã chép tên món “${lastWinner.name}”, dán vào ô tìm kiếm của quán nhé`);
   const list = loadHistory();
   if (lastEntry && list[0]?.at === lastEntry.at) { list[0].picked = true; saveHistory(list); postEvent('pick', lastEntry.name); }
   closeModal();
@@ -1082,6 +1083,25 @@ function renderFeed() {
     li.append(info);
     $('feedList').append(li);
   }
+}
+// Copy synchronously inside the tap (iOS drops async clipboard writes), so the dish name can be pasted into the shop's search box
+function copyText(text) {
+  const t = document.createElement('textarea');
+  t.value = text; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px';
+  document.body.append(t);
+  t.select(); t.setSelectionRange(0, text.length);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch {}
+  t.remove();
+  if (!ok && navigator.clipboard) navigator.clipboard.writeText(text).then(() => {}, () => {});
+  return ok;
+}
+function noteToast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast mine';
+  el.textContent = msg;
+  $('toasts').prepend(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, 5000);
 }
 function toast(ev) {
   const el = document.createElement('div');
