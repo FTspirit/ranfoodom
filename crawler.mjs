@@ -202,6 +202,21 @@ export async function getAreas() {
   });
 }
 
+// Minutes since midnight in Vietnam (UTC+7, no DST), independent of the server's own timezone
+const vnMinutes = () => { const d = new Date(Date.now() + 7 * 3600e3); return d.getUTCHours() * 60 + d.getUTCMinutes(); };
+const CLOSING_SOON_MIN = 30;   // a shop that closes within this window can't deliver in time, so treat it as closed
+const toMin = t => { const m = /^(\d{1,2}):(\d{2})/.exec(t || ''); return m ? +m[1] * 60 + +m[2] : null; };
+// Minutes left until closing now, or null when the hours are unknown / the shop runs around the clock
+function minutesToClose(op) {
+  const o = toMin(op?.open_time), c = toMin(op?.close_time);
+  if (o == null || c == null) return null;
+  if (o === 0 && c >= 1439) return null;   // 00:00 to 23:59 = open all day
+  const now = vnMinutes();
+  if (o <= c) return now >= o && now <= c ? c - now : -1;   // -1: outside today's hours
+  return now >= o ? c + 1440 - now : now <= c ? c - now : -1;   // overnight, e.g. 18:00 to 02:00
+}
+const hhmm = t => (t || '').slice(0, 5);
+
 function shopOut(i, city, lat, lng) {
   const photo = (i.photos || []).reduce((best, p) => (!best || p.width > best.width ? p : best), null);
   const pos = i.position || {};
@@ -213,7 +228,9 @@ function shopOut(i, city, lat, lng) {
     image: photo?.value || null,
     km: pos.latitude ? Math.round(km(lat, lng, pos.latitude, pos.longitude) * 10) / 10 : null,
     rating: i.rating?.avg ? Math.round(i.rating.avg * 10) / 10 : null,
-    open: i.is_open !== false,
+    // Judged from the opening hours at request time (the crawl itself can be minutes old)
+    open: i.is_open !== false && !((m => m != null && m < CLOSING_SOON_MIN)(minutesToClose(i.operating))),
+    hours: i.operating?.open_time && i.operating?.close_time ? `${hhmm(i.operating.open_time)}–${hhmm(i.operating.close_time)}` : '',
   };
 }
 

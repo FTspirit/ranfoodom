@@ -579,7 +579,7 @@ function renderList() {
       li.innerHTML = `<label><input type="checkbox" data-id="${d.id}"><span class="sn"><span></span><span class="sm"></span></span><span class="price"></span></label><button class="go">Xem món</button>`;
       li.querySelector('input').checked = d.on;
       li.querySelector('.sn > span').textContent = d.name;
-      li.querySelector('.sm').textContent = [d.open ? '' : 'Đang đóng', d.rating ? `⭐ ${d.rating}` : '', d.category].filter(Boolean).join(', ');
+      li.querySelector('.sm').textContent = [d.open ? '' : 'Đang đóng', d.hours ? `Mở ${d.hours}` : '', d.rating ? `⭐ ${d.rating}` : '', d.category].filter(Boolean).join(', ');
       li.querySelector('.price').textContent = d.priceText;
       li.querySelector('.go').addEventListener('click', () => openShop(d));
       $('list').appendChild(li);
@@ -1154,16 +1154,19 @@ async function findNearby(lat, lng) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không tìm được quán, thử lại nhé');
     const anyOpen = data.shops.some(s => s.open);
-    nearShops = data.shops.map(s => ({
+    // Closed (or about to close) shops are dropped so they can't win the wheel; if everything is closed keep them all so the wheel still works
+    const hidden = anyOpen ? data.shops.filter(s => !s.open).length : 0;
+    nearShops = data.shops.filter(s => s.open || !anyOpen).map(s => ({
       id: s.id, name: s.name, url: s.url, image: s.image, rating: s.rating, open: s.open,
       km: s.km, priceText: s.km == null ? '?' : `${s.km} km`, category: s.address,
-      on: s.open || !anyOpen,   // closed shops start unticked unless everything is closed
+      hours: s.hours,
+      on: true,
     }));
     nearInfo = data;
     showShops();
     setStatus(anyOpen
-      ? `Tìm thấy ${nearShops.length} quán. Bấm Quay quán, trúng quán nào thì quay món ở quán đó!`
-      : `Tìm thấy ${nearShops.length} quán nhưng giờ đều đang đóng, vẫn quay thử được nhé.`);
+      ? `Tìm thấy ${nearShops.length} quán đang mở${hidden ? ` (đã bỏ ${hidden} quán đóng hoặc sắp đóng)` : ''}. Bấm Quay quán, trúng quán nào thì quay món ở quán đó!`
+      : `Tìm thấy ${nearShops.length} quán nhưng giờ đều đang đóng hoặc sắp đóng, vẫn quay thử được nhé.`);
   } catch (err) {
     setStatus(err.message, true);
   } finally {
