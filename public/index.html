@@ -932,7 +932,17 @@ function loadImage(src) {
     img.src = src.split('@')[0];     // full-size photo instead of the 180px thumbnail
   });
 }
-function roundRect(c, x, y, w, h, r) { c.beginPath(); c.roundRect(x, y, w, h, r); }
+// Built from arcs: CanvasRenderingContext2D.roundRect only exists on Safari 16+, and on iOS 15 it made the whole share card fail
+function roundRect(c, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
+}
 function wrapLines(c, text, maxW, maxLines) {
   const words = text.split(/\s+/), lines = [];
   let line = '';
@@ -1041,7 +1051,9 @@ $('share').addEventListener('click', async () => {
     }
     openSheet(blob, file.name, link, text);
   } catch {
+    // the status line can sit off-screen on mobile, so say it where the user is looking
     setStatus('Không tạo được ảnh chia sẻ, thử lại nhé', true);
+    noteToast('Không tạo được ảnh chia sẻ, thử lại nhé');
   } finally {
     $('share').disabled = false; $('share').textContent = '📸 Chia sẻ';
   }
