@@ -55,6 +55,19 @@
   button:active:not(:disabled), a.btn:active { transform:translate(4px,4px); box-shadow:1px 1px 0 var(--ink); }
   button:disabled { filter:grayscale(.7); opacity:.6; cursor:not-allowed; }
   .status { min-height:28px; margin:14px auto 6px; text-align:center; color:#fff; font-weight:600; }
+  .status.busy { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .finder { position:relative; width:84px; height:84px; }
+  .finder .orbit { position:absolute; inset:0; animation:fSpin 2.4s linear infinite; }
+  .finder .orbit i { position:absolute; left:50%; top:50%; width:12px; height:12px; margin:-6px; border:2px solid var(--ink); border-radius:50%; box-shadow:1px 1px 0 var(--ink); }
+  .finder .orbit i:nth-child(1) { background:var(--butter); transform:rotate(0deg) translateY(-38px); }
+  .finder .orbit i:nth-child(2) { background:var(--mint); transform:rotate(120deg) translateY(-38px); }
+  .finder .orbit i:nth-child(3) { background:var(--sky2); transform:rotate(240deg) translateY(-38px); }
+  .finder .bowl { position:absolute; left:50%; top:50%; margin:-17px; font-size:34px; line-height:34px; animation:fSpinBack 2.4s linear infinite; }
+  .finder .pin { position:absolute; left:50%; top:-4px; margin-left:-12px; font-size:24px; line-height:24px; animation:fHop .8s ease-in-out infinite; transform-origin:50% 100%; }
+  @keyframes fSpin { to { transform:rotate(360deg); } }
+  @keyframes fSpinBack { from { transform:rotate(0); } to { transform:rotate(-360deg); } }
+  @keyframes fHop { 0%,100% { transform:translateY(0) scale(1,.9); } 50% { transform:translateY(-8px) scale(.95,1.08); } }
+  @media (prefers-reduced-motion: reduce) { .finder * { animation:none !important; } }
   .status.error { color:var(--ink); background:var(--butter); border:var(--line); border-radius:12px; padding:4px 12px; width:fit-content; }
 
   .layout { display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:28px; align-items:start; margin-top:10px; }
@@ -400,9 +413,18 @@ const SLOTS = [-2, -1, 1, 2, 0];   // centre card last so it paints on top
 
 $('url').value = new URLSearchParams(location.search).get('url') || '';
 
-function setStatus(msg, isError = false) {
-  $('status').textContent = msg;
-  $('status').className = 'status' + (isError ? ' error' : '');
+function setStatus(msg, isError = false, busy = false) {
+  const el = $('status');
+  el.textContent = '';
+  if (busy) {
+    // pin hopping over a noodle bowl, shop dots orbiting around it
+    const f = document.createElement('div');
+    f.className = 'finder';
+    f.setAttribute('aria-hidden', 'true');
+    f.innerHTML = '<div class="orbit"><i></i><i></i><i></i></div><span class="bowl">🍜</span><span class="pin">📍</span>';
+    el.append(f, document.createTextNode(msg));
+  } else el.textContent = msg;
+  el.className = 'status' + (isError ? ' error' : '') + (busy ? ' busy' : '');
 }
 
 function emptyText() {
@@ -1065,7 +1087,7 @@ function openShop(d) {
 }
 async function findNearby(lat, lng) {
   $('near').disabled = true;
-  setStatus('Đang tìm quán quanh bạn trên ShopeeFood… chờ xíu (10–20 giây)');
+  setStatus('Đang tìm quán quanh bạn trên ShopeeFood… chờ xíu (10–20 giây)', false, true);
   try {
     const res = await fetch(`/api/nearby?lat=${lat}&lng=${lng}`);
     const data = await res.json();
@@ -1090,7 +1112,7 @@ async function findNearby(lat, lng) {
 $('near').addEventListener('click', () => {
   if (!navigator.geolocation) return openAreaPicker('Trình duyệt không lấy được vị trí, chọn khu vực nhé');
   $('near').disabled = true;
-  setStatus('Đang lấy vị trí của bạn…');
+  setStatus('Đang lấy vị trí của bạn…', false, true);
   navigator.geolocation.getCurrentPosition(
     pos => findNearby(pos.coords.latitude.toFixed(5), pos.coords.longitude.toFixed(5)),
     err => {
