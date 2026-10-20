@@ -605,7 +605,7 @@ $('histClear').addEventListener('click', () => {
 
 $('form').addEventListener('submit', e => { e.preventDefault(); loadMenu(); });
 
-// Shared by the form submit and openShop, so loading never depends on requestSubmit() or form validation
+// Shared by the form submit and openShop, so loading never depends on form.requestSubmit (missing on iOS 15) or form validation
 async function loadMenu() {
   if (loadingMenu) return;
   $('load').disabled = true;
@@ -1123,9 +1123,9 @@ $('area').addEventListener('submit', e => {
 (async () => {
   const q = new URLSearchParams(location.search);
   if (!q.get('url')) return;
-  await new Promise(r => setTimeout(r));   // let the submit listener settle
+  await new Promise(r => setTimeout(r));   // let the page finish initialising
   const loaded = new Promise(r => { const t = setInterval(() => { if (!$('load').disabled) { clearInterval(t); r(); } }, 100); });
-  $('form').requestSubmit();
+  loadMenu();
   if (!q.get('d')) return;
   await loaded;
   const d = dishes.find(x => String(x.id) === q.get('d'));
