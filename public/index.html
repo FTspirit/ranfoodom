@@ -239,7 +239,7 @@
     /* result: full-screen reveal like a prize card */
     .modal.open { align-items:stretch; padding:14px 16px calc(16px + env(safe-area-inset-bottom)); overflow:hidden;
       background:radial-gradient(circle at 50% 38%, #6a46c2f2, #1f1330f7 72%); }
-    .rays { display:block; position:absolute; left:50%; top:38%; width:180vmax; height:180vmax; margin:-90vmax 0 0 -90vmax; opacity:.22;
+    .rays { display:block; pointer-events:none; position:absolute; left:50%; top:38%; width:180vmax; height:180vmax; margin:-90vmax 0 0 -90vmax; opacity:.22;
       background:repeating-conic-gradient(#ffe36e 0 7deg, transparent 7deg 20deg); animation:rays 26s linear infinite;
       -webkit-mask:radial-gradient(circle, #000 8%, transparent 46%); mask:radial-gradient(circle, #000 8%, transparent 46%); }
     @keyframes rays { to { transform:rotate(1turn); } }
@@ -255,7 +255,7 @@
     .result img { flex:1; min-height:0; width:100%; height:auto; max-height:52vh; transform:rotate(-1.5deg); border-radius:18px; }
     .result h3 { font-size:28px; }
     .result p { margin-bottom:0; }
-    .result .actions { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:22px; padding:0 10px; }
+    .result .actions { position:relative; z-index:1; display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:22px; padding:0 10px; }
     .result .actions button { width:100%; padding:13px 8px; font-size:19px; border-radius:999px; }
     .result .actions #close, .result #again[hidden] + #share { grid-column:1 / -1; }
     #close { order:-1; background:var(--butter); }
@@ -603,8 +603,11 @@ $('histClear').addEventListener('click', () => {
   if (confirm('Xoá toàn bộ lịch sử quay?')) saveHistory([]);
 });
 
-$('form').addEventListener('submit', async e => {
-  e.preventDefault();
+$('form').addEventListener('submit', e => { e.preventDefault(); loadMenu(); });
+
+// Shared by the form submit and openShop, so loading never depends on requestSubmit() or form validation
+async function loadMenu() {
+  if (loadingMenu) return;
   $('load').disabled = true;
   $('url').blur();   // close the on-screen keyboard so the deck is visible while loading
   setStatus('Đang lấy thực đơn từ ShopeeFood… chờ xíu (5–15 giây)');
@@ -642,7 +645,7 @@ $('form').addEventListener('submit', async e => {
     loadingMenu = false;
     renderList();
   }
-});
+}
 
 function spin() {
   if (spinning || loadingMenu || !pool.length) return;
@@ -817,7 +820,7 @@ function showResult(d, by = null) {
 function closeModal() { $('modal').classList.remove('open'); $('spin').focus(); }
 $('close').addEventListener('click', () => {
   if (sharedBy) { closeModal(); spin(); return; }
-  if (mode === 'shop') { closeModal(); openShop(lastWinner); return; }
+  if (mode === 'shop') { const d = lastWinner; closeModal(); openShop(d); return; }
   const list = loadHistory();
   if (lastEntry && list[0]?.at === lastEntry.at) { list[0].picked = true; saveHistory(list); postEvent('pick', lastEntry.name); }
   closeModal();
@@ -1042,7 +1045,7 @@ function openShop(d) {
   $('url').dataset.shop = d.name;
   $('shopName').textContent = d.name;
   $('stage').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  $('form').requestSubmit();
+  loadMenu();
 }
 async function findNearby(lat, lng) {
   $('near').disabled = true;
