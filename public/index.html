@@ -55,7 +55,13 @@
   button:active:not(:disabled), a.btn:active { transform:translate(4px,4px); box-shadow:1px 1px 0 var(--ink); }
   button:disabled { filter:grayscale(.7); opacity:.6; cursor:not-allowed; }
   .status { min-height:28px; margin:14px auto 6px; text-align:center; color:#fff; font-weight:600; }
-  .status.busy { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .loader { position:fixed; inset:0; z-index:20; display:none; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:24px; text-align:center;
+    background:linear-gradient(#2a1b3df2, #1f1330f7); color:#fff; touch-action:none; overscroll-behavior:contain; }
+  .loader.open { display:flex; }
+  .loader .lmsg { margin:0; font-size:18px; font-weight:700; }
+  .loader .quote { margin:0; min-height:3.2em; max-width:320px; font-weight:600; font-size:15px; line-height:1.4; color:var(--butter); transition:opacity .3s; }
+  .loader .quote.out { opacity:0; }
+  .loader .finder { transform:scale(1.6); margin:30px 0; }
   .finder { position:relative; width:84px; height:84px; }
   .finder .orbit { position:absolute; inset:0; animation:fSpin 2.4s linear infinite; }
   .finder .orbit i { position:absolute; left:50%; top:50%; width:12px; height:12px; margin:-6px; border:2px solid var(--ink); border-radius:50%; box-shadow:1px 1px 0 var(--ink); }
@@ -385,6 +391,11 @@
 </div>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 <canvas id="fx" aria-hidden="true"></canvas>
+<div class="loader" id="loader" role="alertdialog" aria-modal="true" aria-busy="true" aria-labelledby="lmsg">
+  <div class="finder" aria-hidden="true"><div class="orbit"><i></i><i></i><i></i></div><span class="bowl">🍜</span><span class="pin">📍</span></div>
+  <p class="lmsg" id="lmsg"></p>
+  <p class="quote" id="lquote" aria-hidden="true"></p>
+</div>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -413,18 +424,45 @@ const SLOTS = [-2, -1, 1, 2, 0];   // centre card last so it paints on top
 
 $('url').value = new URLSearchParams(location.search).get('url') || '';
 
-function setStatus(msg, isError = false, busy = false) {
-  const el = $('status');
-  el.textContent = '';
-  if (busy) {
-    // pin hopping over a noodle bowl, shop dots orbiting around it
-    const f = document.createElement('div');
-    f.className = 'finder';
-    f.setAttribute('aria-hidden', 'true');
-    f.innerHTML = '<div class="orbit"><i></i><i></i><i></i></div><span class="bowl">🍜</span><span class="pin">📍</span>';
-    el.append(f, document.createTextNode(msg));
-  } else el.textContent = msg;
-  el.className = 'status' + (isError ? ' error' : '') + (busy ? ' busy' : '');
+function setStatus(msg, isError = false) {
+  $('status').textContent = msg;
+  $('status').className = 'status' + (isError ? ' error' : '');
+}
+
+// Full-screen loader: blocks the UI while a slow request runs; pin hopping over a noodle bowl, shop dots orbiting, jokes below
+const QUOTES = [
+  'Đang hỏi bác tài xế xem quán nào ngon…',
+  'Đừng lo, bụng đói chứ app không đói. Chờ xíu nha!',
+  'Đang đếm xem quán nào có nhiều hành nhất…',
+  'Ăn gì cũng được? Không, hôm nay phải ăn cái gì đó cụ thể!',
+  'Vũ trụ đang cân nhắc giữa phở và bún chả…',
+  'Đang đánh thức mấy anh bếp trưởng dậy…',
+  'Nhịn thêm 10 giây nữa thôi, đồ ăn ngon đáng để chờ.',
+  'Đang thương lượng với con ship để nó khỏi lạc đường…',
+  'Mẹo: càng đói thì quán càng xa. Cố lên!',
+  'Đang lọc quán “ngon nhưng bảo đi ăn cùng thì lại bận”…',
+];
+let quoteTimer = 0;
+function showLoader(msg) {
+  const el = $('loader'), q = $('lquote');
+  $('lmsg').textContent = msg;
+  if (!el.classList.contains('open')) {
+    let i = Math.floor(Math.random() * QUOTES.length);
+    q.textContent = QUOTES[i];
+    q.classList.remove('out');
+    clearInterval(quoteTimer);
+    quoteTimer = setInterval(() => {
+      q.classList.add('out');
+      setTimeout(() => { i = (i + 1) % QUOTES.length; q.textContent = QUOTES[i]; q.classList.remove('out'); }, 300);
+    }, 3500);
+    el.classList.add('open');
+    document.querySelector('main').inert = true;   // also blocks keyboard focus where supported
+  }
+}
+function hideLoader() {
+  clearInterval(quoteTimer);
+  $('loader').classList.remove('open');
+  document.querySelector('main').inert = false;
 }
 
 function emptyText() {
@@ -634,6 +672,7 @@ async function loadMenu() {
   $('load').disabled = true;
   $('url').blur();   // close the on-screen keyboard so the deck is visible while loading
   setStatus('Đang lấy thực đơn từ ShopeeFood… chờ xíu (5–15 giây)');
+  showLoader('Đang lấy thực đơn…');
   // Clear the old wheel (often the shop wheel) so nobody spins it again while waiting
   const fromShops = mode === 'shop';
   loadingMenu = true;
@@ -664,6 +703,7 @@ async function loadMenu() {
       $('status').scrollIntoView({ block: 'center', behavior: 'smooth' });
     }
   } finally {
+    hideLoader();
     $('load').disabled = false;
     loadingMenu = false;
     renderList();
@@ -1087,7 +1127,8 @@ function openShop(d) {
 }
 async function findNearby(lat, lng) {
   $('near').disabled = true;
-  setStatus('Đang tìm quán quanh bạn trên ShopeeFood… chờ xíu (10–20 giây)', false, true);
+  setStatus('Đang tìm quán quanh bạn trên ShopeeFood… chờ xíu (10–20 giây)');
+  showLoader('Đang tìm quán quanh bạn…');
   try {
     const res = await fetch(`/api/nearby?lat=${lat}&lng=${lng}`);
     const data = await res.json();
@@ -1106,16 +1147,19 @@ async function findNearby(lat, lng) {
   } catch (err) {
     setStatus(err.message, true);
   } finally {
+    hideLoader();
     $('near').disabled = false;
   }
 }
 $('near').addEventListener('click', () => {
   if (!navigator.geolocation) return openAreaPicker('Trình duyệt không lấy được vị trí, chọn khu vực nhé');
   $('near').disabled = true;
-  setStatus('Đang lấy vị trí của bạn…', false, true);
+  setStatus('Đang lấy vị trí của bạn…');
+  showLoader('Đang lấy vị trí của bạn…');
   navigator.geolocation.getCurrentPosition(
     pos => findNearby(pos.coords.latitude.toFixed(5), pos.coords.longitude.toFixed(5)),
     err => {
+      hideLoader();
       $('near').disabled = false;
       openAreaPicker(err.code === err.PERMISSION_DENIED
         ? 'Bạn chưa cho phép vị trí. Chọn quận bên dưới để tìm quán nhé'
