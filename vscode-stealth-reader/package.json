@@ -1,0 +1,78 @@
+{
+  "name": "stealth-reader",
+  "displayName": "Stealth Reader",
+  "description": "Read local .txt novels inside VS Code. Stage 1: import, chapter parsing, pagination and progress.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "main": "./dist/extension.js",
+  "activationEvents": ["onStartupFinished"],
+  "contributes": {
+    "commands": [
+      { "command": "stealthReader.importBook", "title": "Import Book (.txt)", "category": "Stealth Reader" },
+      { "command": "stealthReader.selectBook", "title": "Select Book", "category": "Stealth Reader" },
+      { "command": "stealthReader.removeBook", "title": "Remove Book", "category": "Stealth Reader" },
+      { "command": "stealthReader.gotoChapter", "title": "Go to Chapter", "category": "Stealth Reader" }
+    ],
+    "configuration": {
+      "title": "Stealth Reader",
+      "properties": {
+        "stealthReader.chapterPatterns": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [
+            "^\\s*(?:chương|chuong|chapter)\\s+(?:\\d+|[IVXLCDM]+)\\b.*$",
+            "^\\s*第\\s*[0-9０-９〇零一二三四五六七八九十百千万两]+\\s*章.*$"
+          ],
+          "markdownDescription": "Regular expressions (JavaScript, flags `imu`) matching a whole chapter heading line."
+        },
+        "stealthReader.chunkSize": {
+          "type": "number",
+          "default": 3000,
+          "minimum": 200,
+          "description": "Chunk size in characters used when a book has no recognisable chapter headings."
+        },
+        "stealthReader.lineWidth": {
+          "type": "number",
+          "default": 80,
+          "minimum": 10,
+          "maximum": 400,
+          "description": "Maximum width (characters) of a displayed line."
+        },
+        "stealthReader.pageSize": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "description": "Number of lines per page returned by ReaderService.getPage()."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit && node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "compile": "tsc -p tsconfig.json",
+    "lint": "eslint src test",
+    "pretest": "npm run compile",
+    "test": "mocha \"out/test/unit/**/*.test.js\"",
+    "test:vscode": "npm run build && npm run compile && node ./out/test/runTest.js",
+    "fixtures": "node scripts/make-fixtures.mjs"
+  },
+  "dependencies": {
+    "iconv-lite": "^0.6.3"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/test-electron": "^2.3.9",
+    "esbuild": "^0.21.5",
+    "eslint": "^9.5.0",
+    "mocha": "^10.4.0",
+    "typescript": "^5.4.5",
+    "typescript-eslint": "^8.0.0"
+  }
+}
